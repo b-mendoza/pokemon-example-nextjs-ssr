@@ -8,7 +8,12 @@ import Link from 'next/link'
 import { Pokemon as PokemonType } from 'models'
 
 const getPokemon = async (name: string) => {
-  const response = await fetch(`/api/pokemon?name=${escape(name)}`)
+  const BASE_URL =
+    process.env.NODE_ENV === 'development'
+      ? process.env.NEXT_PUBLIC_DEVELOPMENT_URL
+      : process.env.NEXT_PUBLIC_PRODUCTION_URL
+
+  const response = await fetch(`${BASE_URL}/api/pokemon?name=${escape(name)}`)
 
   const data: PokemonType = await response.json()
 
