@@ -1,43 +1,40 @@
-import { Container, Card, CardColumns, FormControl } from 'react-bootstrap'
-import { useQuery } from 'react-query'
-import { useState } from 'react'
-
-import axios from 'axios'
-
-import Head from 'next/head'
-import Link from 'next/link'
-
-import { Pokemon } from 'models'
+import axios from 'axios';
+import LinkTo from 'components/LinkTo';
+import { Pokemon } from 'models';
+import Head from 'next/head';
+import { useState } from 'react';
+import { Card, CardColumns, Container, FormControl } from 'react-bootstrap';
+import { useQuery } from 'react-query';
 
 type FormControlElement =
   | HTMLInputElement
   | HTMLSelectElement
-  | HTMLTextAreaElement
+  | HTMLTextAreaElement;
 
 const getPokemon = async (_: string, query: string) => {
-  const { data } = await axios.get<Pokemon[]>(`/api/search?q=${escape(query)}`)
+  const { data } = await axios.get<Pokemon[]>(`/api/search?q=${escape(query)}`);
 
   return data.map(pokemon => ({
     ...pokemon,
     image: `/pokemon/${pokemon.name.english
       .toLowerCase()
-      .replace(' ', '-')}.jpg`
-  }))
-}
+      .replace(' ', '-')}.jpg`,
+  }));
+};
 
 function Home() {
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState('');
 
   const { data } = useQuery(['searchQuery', query], () =>
-    getPokemon('searchQuery', query)
-  )
+    getPokemon('searchQuery', query),
+  );
 
   const handleSearch = (event: React.ChangeEvent<FormControlElement>) => {
-    const input = event.target as HTMLInputElement
-    const inputValue = input.value
+    const input = event.target as HTMLInputElement;
+    const inputValue = input.value;
 
-    setQuery(inputValue)
-  }
+    setQuery(inputValue);
+  };
 
   return (
     <>
@@ -60,7 +57,7 @@ function Home() {
           {data ? (
             <CardColumns>
               {data.map(({ id, name, type, image }) => (
-                <Link key={id} href={`/pokemon/${name.english}`}>
+                <LinkTo key={id} href={`/pokemon/${name.english}`}>
                   <Card>
                     <Card.Img variant="top" src={image} />
                     <Card.Body>
@@ -68,7 +65,7 @@ function Home() {
                       <Card.Subtitle>{type.join(', ')}</Card.Subtitle>
                     </Card.Body>
                   </Card>
-                </Link>
+                </LinkTo>
               ))}
             </CardColumns>
           ) : null}
@@ -81,7 +78,7 @@ function Home() {
         }
       `}</style>
     </>
-  )
+  );
 }
 
-export default Home
+export default Home;

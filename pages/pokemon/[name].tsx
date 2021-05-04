@@ -1,28 +1,26 @@
-import { Col, Container, Row } from 'react-bootstrap'
-import { GetServerSideProps } from 'next'
-
-import Head from 'next/head'
-import Image from 'next/image'
-import Link from 'next/link'
-
-import { Pokemon as PokemonType } from 'models'
+import LinkTo from 'components/LinkTo';
+import { Pokemon as PokemonType } from 'models';
+import { GetServerSideProps } from 'next';
+import Head from 'next/head';
+import Image from 'next/image';
+import { Col, Container, Row } from 'react-bootstrap';
 
 const getPokemon = async (name: string) => {
   const BASE_URL =
     process.env.NODE_ENV === 'development'
-      ? process.env.NEXT_PUBLIC_DEVELOPMENT_URL
-      : process.env.NEXT_PUBLIC_PRODUCTION_URL
+      ? process.env.DEVELOPMENT_URL
+      : process.env.PRODUCTION_URL;
 
-  const response = await fetch(`${BASE_URL}/api/pokemon?name=${escape(name)}`)
+  const response = await fetch(`${BASE_URL}/api/pokemon?name=${escape(name)}`);
 
-  const data: PokemonType = await response.json()
+  const data = (await response.json()) as PokemonType;
 
-  return data
-}
+  return data;
+};
 
 type Props = {
-  data: PokemonType
-}
+  data: PokemonType;
+};
 
 function Pokemon({ data }: Props) {
   return (
@@ -66,11 +64,9 @@ function Pokemon({ data }: Props) {
             </>
           ) : null}
 
-          <Link href="/">
-            <a>
-              <h3>Return to Home</h3>
-            </a>
-          </Link>
+          <LinkTo href="/">
+            <h3>Return to Home</h3>
+          </LinkTo>
         </Container>
       </div>
 
@@ -80,17 +76,25 @@ function Pokemon({ data }: Props) {
         }
       `}</style>
     </>
-  )
+  );
 }
 
 export const getServerSideProps: GetServerSideProps = async ({ params }) => {
-  const data = await getPokemon(params ? (params.name as string) : 'bewear')
+  try {
+    const data = await getPokemon(params ? (params.name as string) : 'bewear');
 
-  return {
-    props: {
-      data: data
-    }
+    return {
+      props: {
+        data,
+      },
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      props: {},
+    };
   }
-}
+};
 
-export default Pokemon
+export default Pokemon;
