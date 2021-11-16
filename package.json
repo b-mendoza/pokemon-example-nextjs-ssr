@@ -1,7 +1,7 @@
 {
   "name": "ssr",
-  "version": "0.1.0",
   "private": true,
+  "version": "0.1.0",
   "scripts": {
     "build": "next build",
     "ci-check": "npm run type-check && npm run lint:write",
