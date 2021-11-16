@@ -3,7 +3,7 @@ import { Card } from 'react-bootstrap';
 
 import { Pokemon } from 'typings/pokemon';
 
-import { getPokemonImagePathname } from 'utils/getPathname';
+import { getPokemonImagePathname } from 'utils/getPokemonImagePathname';
 
 type PokemonCardProps = Pokemon;
 
