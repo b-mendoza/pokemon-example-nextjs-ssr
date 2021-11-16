@@ -1,10 +1,10 @@
 {
-  "arrowParens": "avoid",
+  "arrowParens": "always",
+  "bracketSameLine": false,
   "bracketSpacing": true,
   "endOfLine": "lf",
   "htmlWhitespaceSensitivity": "css",
   "insertPragma": false,
-  "jsxBracketSameLine": false,
   "jsxSingleQuote": false,
   "printWidth": 80,
   "proseWrap": "always",
