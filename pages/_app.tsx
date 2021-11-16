@@ -1,17 +1,27 @@
-import { AppProps } from 'next/app';
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { ReactQueryDevtools } from 'react-query/devtools';
+import type { AppProps as NextJSAppProps } from 'next/app';
+import { SSRProvider } from 'react-bootstrap';
+import { SWRConfig } from 'swr';
 
-const queryClient = new QueryClient();
+import { CustomPageProps } from 'typings/shared';
 
-function App({ Component, pageProps }: AppProps) {
+import { fetcher } from 'utils/fetcher';
+
+import 'bootstrap/dist/css/bootstrap.min.css';
+
+type CustomAppProps = Omit<NextJSAppProps<CustomPageProps>, 'pageProps'> & {
+  pageProps: CustomPageProps;
+};
+
+function __App({ Component, pageProps }: CustomAppProps) {
+  const { fallback } = pageProps;
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <Component {...pageProps} />
-
-      <ReactQueryDevtools initialIsOpen />
-    </QueryClientProvider>
+    <SWRConfig value={{ fallback, fetcher, revalidateOnFocus: false }}>
+      <SSRProvider>
+        <Component {...pageProps} />
+      </SSRProvider>
+    </SWRConfig>
   );
 }
 
-export default App;
+export default __App;
