@@ -1,100 +1,133 @@
-import LinkTo from 'components/LinkTo';
-import { Pokemon as PokemonType } from 'models';
-import { GetServerSideProps } from 'next';
+import { GetStaticPaths, GetStaticProps } from 'next';
 import Head from 'next/head';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Col, Container, Row } from 'react-bootstrap';
 
-const getPokemon = async (name: string) => {
-  const BASE_URL =
-    process.env.NODE_ENV === 'development'
-      ? process.env.DEVELOPMENT_URL
-      : process.env.PRODUCTION_URL;
+import pokemonList from 'pokemon.json';
 
-  const response = await fetch(`${BASE_URL}/api/pokemon?name=${escape(name)}`);
+import { Pokemon } from 'typings/pokemon';
 
-  const data = (await response.json()) as PokemonType;
-
-  return data;
+type PokemonViewProps = {
+  data: Pokemon | null;
 };
 
-type Props = {
-  data: PokemonType;
-};
+const formatPokemonName = (name: string) =>
+  name.toLowerCase().replace(' ', '-');
 
-function Pokemon({ data }: Props) {
+function PokemonView({ data }: PokemonViewProps) {
+  const { base, name } = data ?? {};
+
   return (
     <>
-      <div>
-        <Head>
-          <title>{(data ? data.name.english : null) || 'Pokemon'}</title>
-        </Head>
+      <Head>
+        <title>{name?.english || 'Pokemon'}</title>
+      </Head>
 
+      <main>
         <Container>
           {data ? (
             <>
-              <Row>
-                <Col xs={6}>
-                  <h1>{data.name.english}</h1>
-
-                  <br />
-
-                  {Object.entries(data.base).map(([key, value]) => (
-                    <Row key={key}>
-                      <Col xs={3}>
-                        <p>{key}</p>
-                      </Col>
-                      <Col xs={4}>
-                        <h5>{value}</h5>
-                      </Col>
-                    </Row>
-                  ))}
-                </Col>
-
-                <Col xs={6}>
-                  <Image
-                    src={`/pokemon/${data.name.english
-                      .toLowerCase()
-                      .replace(' ', '-')}.jpg`}
-                    height={350}
-                    width={350}
-                  />
-                </Col>
+              <Row className="mb-3">
+                <h1>{name?.english}</h1>
               </Row>
+
+              <Row className="mb-3">
+                {base
+                  ? Object.entries(base).map(([propertie, value], index) => (
+                      <Col
+                        className="d-grid gap-4"
+                        key={index}
+                        md={4}
+                        sm={6}
+                        xs={12}
+                      >
+                        <div className="d-flex justify-content-between">
+                          <p>{propertie}</p>
+
+                          <p>
+                            <strong>{value}</strong>
+                          </p>
+                        </div>
+                      </Col>
+                    ))
+                  : null}
+              </Row>
+
+              {name?.english ? (
+                <section className="imageContainer">
+                  <Image
+                    alt={name.english}
+                    height={248}
+                    layout="responsive"
+                    priority
+                    src={`/pokemon/${formatPokemonName(name.english)}.jpg`}
+                    title={name.english}
+                    width={248}
+                  />
+                </section>
+              ) : null}
             </>
           ) : null}
 
-          <LinkTo href="/">
-            <h3>Return to Home</h3>
-          </LinkTo>
+          <footer>
+            <Link href="/">
+              <a>
+                <p>
+                  <strong>Back to Home</strong>
+                </p>
+              </a>
+            </Link>
+          </footer>
         </Container>
-      </div>
+      </main>
 
       <style jsx>{`
-        div {
-          padding: 3rem;
+        main {
+          padding: 1.5rem;
+        }
+
+        section.imageContainer {
+          margin: 0 auto;
+
+          max-width: 40rem;
         }
       `}</style>
     </>
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async ({ params }) => {
-  try {
-    const data = await getPokemon(params ? (params.name as string) : 'bewear');
-
-    return {
-      props: {
-        data,
-      },
-    };
-  } catch (error) {
-    console.error(error);
-
-    return {
-      props: {},
-    };
-  }
+type RouteParams = {
+  name: string;
 };
 
-export default Pokemon;
+export const getStaticPaths: GetStaticPaths<RouteParams> = () => ({
+  fallback: false,
+  paths: pokemonList.map((pokemon) => {
+    const { name } = pokemon;
+
+    return {
+      params: { name: name.english },
+    };
+  }),
+});
+
+export const getStaticProps: GetStaticProps<PokemonViewProps, RouteParams> = (
+  context,
+) => {
+  const { params } = context;
+
+  const typedPokemonList = pokemonList as Pokemon[];
+
+  const pokemon = typedPokemonList.find((pokemon) => {
+    const { name } = pokemon;
+
+    return name.english === params?.name;
+  });
+
+  return {
+    props: { data: pokemon ?? null },
+  };
+};
+
+export default PokemonView;
