@@ -1,84 +1,110 @@
-import axios from 'axios';
-import LinkTo from 'components/LinkTo';
-import { Pokemon } from 'models';
+import debounce from 'lodash.debounce';
+import { GetServerSideProps } from 'next';
 import Head from 'next/head';
-import { useState } from 'react';
-import { Card, CardColumns, Container, FormControl } from 'react-bootstrap';
-import { useQuery } from 'react-query';
+import Link from 'next/link';
+import { useMemo } from 'react';
+import { Col, Container, FormControl, Row } from 'react-bootstrap';
+import useSWR from 'swr';
 
-type FormControlElement =
-  | HTMLInputElement
-  | HTMLSelectElement
-  | HTMLTextAreaElement;
+import PokemonCard from 'components/PokemonCard';
 
-const getPokemon = async (_: string, query: string) => {
-  const { data } = await axios.get<Pokemon[]>(`/api/search?q=${escape(query)}`);
+import { searchPokemons } from 'services/searchPokemons';
 
-  return data.map(pokemon => ({
-    ...pokemon,
-    image: `/pokemon/${pokemon.name.english
-      .toLowerCase()
-      .replace(' ', '-')}.jpg`,
-  }));
-};
+import { SearchPokemonsAPIResponse } from 'typings/api';
+import { CustomPageProps } from 'typings/shared';
+
+const initialURLRequest = `/api/search?q=${encodeURI('')}`;
 
 function Home() {
-  const [query, setQuery] = useState('');
-
-  const { data } = useQuery(['searchQuery', query], () =>
-    getPokemon('searchQuery', query),
+  const { data: response, mutate } = useSWR<SearchPokemonsAPIResponse, Error>(
+    initialURLRequest,
   );
 
-  const handleSearch = (event: React.ChangeEvent<FormControlElement>) => {
-    const input = event.target as HTMLInputElement;
-    const inputValue = input.value;
+  const pokemonList = response?.pokemonList;
 
-    setQuery(inputValue);
-  };
+  const debouncedHandleSearch = useMemo(
+    () =>
+      debounce<
+        NonNullable<React.ComponentProps<typeof FormControl>['onChange']>
+      >(async (event) => {
+        const input = event.target as HTMLInputElement;
+
+        const inputValue = input.value;
+
+        try {
+          const data = await searchPokemons(inputValue);
+
+          await mutate(data, false);
+        } catch {
+          console.error('__ERROR__', 'Fetching more Pokemons');
+        }
+      }, 500),
+    [mutate],
+  );
 
   return (
     <>
-      <div>
-        <Head>
-          <title>Pokemon</title>
-          <link rel="icon" href="/favicon.ico" />
-        </Head>
+      <Head>
+        <title>Pokemon</title>
+      </Head>
 
-        <Container>
+      <main>
+        <Container className="p-0">
           <FormControl
             aria-label="Search"
+            className="mb-4"
             placeholder="Search"
-            value={query}
-            onChange={handleSearch}
+            onChange={debouncedHandleSearch}
           />
 
-          <br />
+          {pokemonList?.length ? (
+            <Row xs={1} md={2} lg={3} xl={4}>
+              {pokemonList.map((pokemon) => {
+                const { id, name } = pokemon;
 
-          {data ? (
-            <CardColumns>
-              {data.map(({ id, name, type, image }) => (
-                <LinkTo key={id} href={`/pokemon/${name.english}`}>
-                  <Card>
-                    <Card.Img variant="top" src={image} />
-                    <Card.Body>
-                      <Card.Title>{name.english}</Card.Title>
-                      <Card.Subtitle>{type.join(', ')}</Card.Subtitle>
-                    </Card.Body>
-                  </Card>
-                </LinkTo>
-              ))}
-            </CardColumns>
+                return (
+                  <Col key={id} className="mb-4">
+                    <Link
+                      href={`/pokemon/${encodeURI(name.english)}`}
+                      prefetch={false}
+                    >
+                      <a>
+                        <PokemonCard {...pokemon} />
+                      </a>
+                    </Link>
+                  </Col>
+                );
+              })}
+            </Row>
           ) : null}
         </Container>
-      </div>
+      </main>
 
       <style jsx>{`
-        div {
-          padding: 3rem;
+        main {
+          padding: 1.5rem;
         }
       `}</style>
     </>
   );
 }
+
+export const getServerSideProps: GetServerSideProps<CustomPageProps> = async () => {
+  try {
+    const data = await searchPokemons();
+
+    return {
+      props: {
+        fallback: { [`${initialURLRequest}`]: data },
+      },
+    };
+  } catch {
+    return {
+      props: {
+        fallback: { [`${initialURLRequest}`]: null },
+      },
+    };
+  }
+};
 
 export default Home;
