@@ -2,11 +2,10 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 import pokemon from 'pokemon.json';
 
+import { SearchPokemonsAPIResponse } from 'typings/api';
 import { Pokemon } from 'typings/pokemon';
 
-type Data = {
-  pokemonList: Pokemon[];
-};
+type Data = SearchPokemonsAPIResponse;
 
 export default function searchPokemon(
   req: NextApiRequest,
