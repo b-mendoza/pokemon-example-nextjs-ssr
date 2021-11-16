@@ -1,29 +1,34 @@
-import { Pokemon } from 'models';
 import { NextApiRequest, NextApiResponse } from 'next';
-import pokemon from 'pokemon.json';
 
-type Data = Pokemon;
+import pokemonList from 'pokemon.json';
 
-export default (req: NextApiRequest, res: NextApiResponse<Data>) => {
+import { Pokemon } from 'typings/pokemon';
+
+type Data = Pokemon | { message: string };
+
+export default function getPokemon(
+  req: NextApiRequest,
+  res: NextApiResponse<Data>,
+) {
   if (!req.query.name) {
-    res.statusCode = 400;
+    res.status(400).json({ message: '`name` param was not provided' });
 
-    res.end('Must have a name');
-  } else {
-    const found = pokemon.filter(
-      ({ name: { english } }) => english === req.query.name,
-    );
-
-    if (found.length === 0) {
-      res.statusCode = 404;
-
-      res.end(`Pokemon ${req.query.name as string} - Not Found`);
-    } else {
-      res.statusCode = 200;
-
-      res.setHeader('Content-Type', 'application/json');
-
-      res.end(JSON.stringify(found[0]));
-    }
+    return;
   }
-};
+
+  const typedPokemonList = pokemonList as Pokemon[];
+
+  const pokemon = typedPokemonList.find((pokemon) => {
+    const { name } = pokemon;
+
+    return name.english === req.query.name;
+  });
+
+  res
+    .status(pokemon ? 200 : 404)
+    .json(
+      pokemon
+        ? pokemon
+        : { message: `Pokemon ${req.query.name as string} - Not Found` },
+    );
+}
