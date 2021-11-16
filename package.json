@@ -3,10 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
     "build": "next build",
-    "build:pre-rendered": "next build && next export",
-    "start": "next start"
+    "ci-check": "npm run type-check && npm run lint:write",
+    "dev": "next dev",
+    "lint": "next lint",
+    "lint:write": "next lint --cache --fix",
+    "start": "next start",
+    "type-check": "tsc --project ./tsconfig.json --pretty"
   },
   "dependencies": {
     "bootstrap": "5.1.3",
